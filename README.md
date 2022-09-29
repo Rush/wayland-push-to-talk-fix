@@ -2,7 +2,7 @@
 This fixes the inability to use push to talk in Discord when running Wayland
 
 
-* NOTE: by default the left Meta (Windows) key is used for push to talk. In order to use a different key, change the `push-to-talk.sh` and `push-to-talk.cpp` files accordingly.*
+**NOTE: by default the left Meta (Windows) key is used for push to talk. In order to use a different key, change the `push-to-talk.sh` and `push-to-talk.cpp` files accordingly.**
 
 ## Requirements
 
