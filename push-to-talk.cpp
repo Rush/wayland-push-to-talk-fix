@@ -13,7 +13,7 @@ int main(int argc, char **argv)
     exit(0);
   }
 
-  int fd = open(argv[1], O_RDONLY | O_NONBLOCK);
+  int fd = open(argv[1], O_RDONLY);
   int rc = libevdev_new_from_fd(fd, &dev);
   if (rc < 0)
   {
