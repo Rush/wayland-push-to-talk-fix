@@ -1,9 +1,11 @@
-CXXLAGS=-Os `pkg-config --cflags --libs libevdev`
+CXXFLAGS=-Os `pkg-config --cflags libevdev`
+LDFLAGS=`pkg-config --libs libevdev` -lxdo
 
-default: push-to-talk
+.PHONY: all clean
+
+all: push-to-talk
 
 push-to-talk: push-to-talk.cpp
-	gcc push-to-talk.cpp $(CXXLAGS) -o push-to-talk
 
 clean:
 	rm -f push-to-talk
