@@ -9,24 +9,44 @@ extern "C" {
 #include <stdlib.h>
 #include <errno.h>
 
-/* See https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h */
-#define PTT_EV_KEY_CODE KEY_LEFTMETA
-/*
- * Full list (Ignore leading XKB_KEY_):
- * https://github.com/xkbcommon/libxkbcommon/blob/master/include/xkbcommon/xkbcommon-keysyms.h
- */
-#define PTT_XKEY_EVENT "Super_L"
 
 int main(int argc, char **argv)
 {
   struct libevdev *dev = NULL;
   xdo_t *xdo;
-  if (argc < 2) {
-    fprintf(stderr, "Usage: %s /dev/input/by-id/<device-name>\n", argv[0]);
-    exit(0);
+
+  bool verbose = false;
+  const char* keycode = "KEY_LEFTMETA";
+  const char *keyname = "Super_L";
+
+  int opt;
+  while ((opt = getopt(argc, argv, "vk:n:")) != -1) {
+    switch (opt) {
+      case 'v':
+        verbose = true;
+        break;
+      case 'k':
+        keycode = optarg;
+        break;
+      case 'n':
+        /*
+         * Full list (Ignore leading XKB_KEY_):
+         * https://github.com/xkbcommon/libxkbcommon/blob/master/include/xkbcommon/xkbcommon-keysyms.h
+         */
+        keyname = optarg;
+        break;
+      default:
+        fprintf(stderr, "Usage: %s [-v] [-k keycode] [-n keyname] /dev/input/by-id/<device-name>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
   }
 
-  int fd = open(argv[1], O_RDONLY);
+  if (optind >= argc) {
+    fprintf(stderr, "Usage: %s [-v] [-k keycode] [-n keyname] /dev/input/by-id/<device-name>\n", argv[0]);
+    exit(EXIT_FAILURE);
+  }
+
+  int fd = open(argv[optind], O_RDONLY);
   if (fd < 0) {
     perror("Failed to open device");
     if (getuid() != 0)
@@ -45,7 +65,14 @@ int main(int argc, char **argv)
           libevdev_get_id_vendor(dev),
           libevdev_get_id_product(dev));
 
-  if (!libevdev_has_event_code(dev, EV_KEY, PTT_EV_KEY_CODE)) {
+  int ev_keycode = libevdev_event_code_from_name(EV_KEY, keycode);
+  if (ev_keycode < 0) {
+    fprintf(stderr, "Key code not found\n");
+    fprintf(stderr, "see https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h\n");
+    exit(1);
+  }
+
+  if (!libevdev_has_event_code(dev, EV_KEY, ev_keycode)) {
     fprintf(stderr, "This device is not capable of sending this key code\n");
     exit(1);
   }
@@ -56,6 +83,10 @@ int main(int argc, char **argv)
     exit(1);
   }
 
+  if (verbose) {
+    fprintf(stderr, "Listening for code %s, sending %s\n", libevdev_event_code_get_name(EV_KEY, ev_keycode), keyname);
+  }
+
   do {
     struct input_event ev;
 
@@ -63,11 +94,13 @@ int main(int argc, char **argv)
     if (rc != LIBEVDEV_READ_STATUS_SUCCESS)
       continue;
 
-    if (ev.type == EV_KEY && ev.code == PTT_EV_KEY_CODE && ev.value != 2) {
+    if (ev.type == EV_KEY && ev.code == ev_keycode && ev.value != 2) {
+      if (verbose)
+        fprintf(stderr, "key %s\n", ev.value ? "up" : "down");
       if (ev.value == 1)
-        xdo_send_keysequence_window_down(xdo, CURRENTWINDOW, PTT_XKEY_EVENT, 0);
+        xdo_send_keysequence_window_down(xdo, CURRENTWINDOW, keyname, 0);
       else
-        xdo_send_keysequence_window_up(xdo, CURRENTWINDOW, PTT_XKEY_EVENT, 0);
+        xdo_send_keysequence_window_up(xdo, CURRENTWINDOW, keyname, 0);
     }
   } while (rc == LIBEVDEV_READ_STATUS_SYNC || rc == LIBEVDEV_READ_STATUS_SUCCESS || rc == -EAGAIN);
 
