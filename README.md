@@ -17,12 +17,24 @@ Read specific key events via evdev (needs sudo) and then pass them to libxdo to 
 
 # Installation
 
-Optimally we would install this as a user systemctl service (contributions welcome) but for now you will need to build this and run in the background with the `&` background operator.
+## Manual run
 
 ```
 make
-sudo ./push-to-talk /dev/input/by-id/<device-name> &
+sudo ./push-to-talk /dev/input/by-id/<device-id> &
 ```
+
+## Autostart
+
+First edit the `push-to-talk.desktop` file and replace `/dev/input/by-id/<device-id>` with your device path. Then:
+```
+make
+sudo make install
+
+# to allow you access `/dev/input` devices without root
+sudo usermod -aG input <your username>
+```
+Then just log out and log in. A process named `push-to-talk` should be running (visible in any process monitor).
 
 # License
 
