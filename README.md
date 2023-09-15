@@ -2,7 +2,7 @@
 This fixes the inability to use push to talk in Discord when running Wayland
 
 
-**NOTE: by default the left Meta (Windows) key is used for push to talk. In order to use a different key, change values for `PTT_EV_KEY_CODE` and `PTT_XKEY_CODE` in file `push-to-talk.c`.**
+**NOTE: by default the left Meta (Windows) key is used for push to talk. In order to use a different key, set `EV_KEY_CODE` and `XKEY_EVENT` environment variables.**
 
 ## Requirements
 
