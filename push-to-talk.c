@@ -1,29 +1,32 @@
-#include <stdio.h>
-#include <fcntl.h>
 #include <libevdev/libevdev.h>
-extern "C" {
-  #include <xdo.h>
-}
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
+#include <xdo.h>
 
+#include <fcntl.h>
+#include <getopt.h>
+#include <unistd.h>
+
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 int main(int argc, char **argv)
 {
-  struct libevdev *dev = NULL;
-  xdo_t *xdo;
-
-  bool verbose = false;
-  const char* keycode = "KEY_LEFTMETA";
+  const char *keycode = "KEY_LEFTMETA";
   const char *keyname = "Super_L";
-
+  struct libevdev *dev = NULL;
+  unsigned char verbose = 0;
+  struct input_event ev;
+  int ev_keycode;
+  xdo_t *xdo;
   int opt;
+  int fd;
+  int rc;
+
   while ((opt = getopt(argc, argv, "vk:n:")) != -1) {
     switch (opt) {
       case 'v':
-        verbose = true;
+        verbose = 1;
         break;
       case 'k':
         keycode = optarg;
@@ -46,14 +49,15 @@ int main(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
 
-  int fd = open(argv[optind], O_RDONLY);
+  fd = open(argv[optind], O_RDONLY);
   if (fd < 0) {
     perror("Failed to open device");
     if (getuid() != 0)
       fprintf(stderr, "Fix permissions to %s or run as root\n", argv[1]);
     exit(1);
   }
-  int rc = libevdev_new_from_fd(fd, &dev);
+
+  rc = libevdev_new_from_fd(fd, &dev);
   if (rc < 0)
   {
     fprintf(stderr, "Failed to init libevdev (%s)\n", strerror(-rc));
@@ -65,7 +69,7 @@ int main(int argc, char **argv)
           libevdev_get_id_vendor(dev),
           libevdev_get_id_product(dev));
 
-  int ev_keycode = libevdev_event_code_from_name(EV_KEY, keycode);
+  ev_keycode = libevdev_event_code_from_name(EV_KEY, keycode);
   if (ev_keycode < 0) {
     fprintf(stderr, "Key code not found\n");
     fprintf(stderr, "see https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h\n");
@@ -78,7 +82,7 @@ int main(int argc, char **argv)
   }
 
   xdo = xdo_new(NULL);
-  if (xdo == NULL) {
+  if (!xdo) {
     fprintf(stderr, "Failed to initialize xdo lib\n");
     exit(1);
   }
@@ -88,8 +92,6 @@ int main(int argc, char **argv)
   }
 
   do {
-    struct input_event ev;
-
     rc = libevdev_next_event(dev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
     if (rc != LIBEVDEV_READ_STATUS_SUCCESS)
       continue;

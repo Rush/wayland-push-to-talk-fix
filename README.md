@@ -7,7 +7,7 @@ This fixes the inability to use push to talk in Discord when running Wayland
 ## Requirements
 
 Nothing special.
-- C++ compiler & Make
+- C compiler & Make
 - libevdev
 - libxdo (Debian/Ubuntu: `libxdo-dev`, Fedora/Centos: `libxdo-devel`)
 
