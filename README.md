@@ -20,6 +20,11 @@ The command supports three command line args.
 - `-v`: verbose mode, logs all keystrokes
 - `-k`: keycode to listen for. [Full list](https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h).
 - `-n`: keycode to send to discord. [Full list](https://github.com/xkbcommon/libxkbcommon/blob/master/include/xkbcommon/xkbcommon-keysyms.h) (ignore leading `XKB_KEY_`).
+- You can use mouse buttons as well for both options, you can determine the
+  correct keycode for `-k` using [evtest](https://cgit.freedesktop.org/evtest/).
+  The correct keycode for `-n` will be in the form of `MOUSE<num>` and you
+  can use [xev](https://gitlab.freedesktop.org/xorg/app/xev/) to determine
+  `<num>` for the particular button press that you are interested in.
 
 # Installation
 

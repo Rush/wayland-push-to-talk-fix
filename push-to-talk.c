@@ -18,6 +18,7 @@ int main(int argc, char **argv)
   unsigned char verbose = 0;
   struct input_event ev;
   int ev_keycode;
+  int button = 0;
   xdo_t *xdo;
   int opt;
   int fd;
@@ -32,6 +33,15 @@ int main(int argc, char **argv)
         keycode = optarg;
         break;
       case 'n':
+        if (optarg && strlen(optarg) >= 5 && !strncmp(optarg, "MOUSE", 5)) {
+          button = strtol((optarg + 5), NULL, 10);
+
+          if (errno) {
+            perror("strtol");
+            exit(EXIT_FAILURE);
+          }
+        }
+
         /*
          * Full list (Ignore leading XKB_KEY_):
          * https://github.com/xkbcommon/libxkbcommon/blob/master/include/xkbcommon/xkbcommon-keysyms.h
@@ -99,10 +109,18 @@ int main(int argc, char **argv)
     if (ev.type == EV_KEY && ev.code == ev_keycode && ev.value != 2) {
       if (verbose)
         fprintf(stderr, "key %s\n", ev.value ? "up" : "down");
-      if (ev.value == 1)
-        xdo_send_keysequence_window_down(xdo, CURRENTWINDOW, keyname, 0);
-      else
-        xdo_send_keysequence_window_up(xdo, CURRENTWINDOW, keyname, 0);
+
+      if (ev.value == 1) {
+        if (!button)
+          xdo_send_keysequence_window_down(xdo, CURRENTWINDOW, keyname, 0);
+        else
+          xdo_mouse_down(xdo, CURRENTWINDOW, button);
+      } else {
+        if (!button)
+          xdo_send_keysequence_window_up(xdo, CURRENTWINDOW, keyname, 0);
+        else
+          xdo_mouse_up(xdo, CURRENTWINDOW, button);
+      }
     }
   } while (rc == LIBEVDEV_READ_STATUS_SYNC || rc == LIBEVDEV_READ_STATUS_SUCCESS || rc == -EAGAIN);
 
